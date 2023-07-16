@@ -95,9 +95,9 @@ export const enqueue = async (params: EnqueueOptions & { queueIdToOverride?: str
     method: params.method,
     params: {
       id: queueId,
-        target: `${baseUrl}/${params.route.replace(/^\//g, '')}`
-      },
-      ...(params.body && { json: params.body }),
+      target: `${baseUrl}/${params.route.replace(/^\//g, '')}`
+    },
+    ...(params.body && { json: params.body }),
   }
 
   try {

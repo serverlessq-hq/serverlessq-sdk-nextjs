@@ -49,7 +49,7 @@ You need to set the `SERVERLESSQ_API_TOKEN` to have access to the system.
 
 1. Create an account at [app.serverlessq.com](https://app.serverlessq.com) and follow the steps described in our [documentation](https://docs.serverlessq.com/sdks/javascript) to get the API token.
 
-> 💡 you can also use our [Vercel Integration](https://vercel.com/integrations/serverlessq)to automate that task 🙂
+> 💡 you can also use our [Vercel Integration](https://vercel.com/integrations/serverlessq) to automate that task 🙂
 
 If you want to use this library locally please create `.env.local` file with the following value:
 
@@ -77,6 +77,8 @@ What does this do? If you are running your NextJS application locally e.g. throu
 
 ![Alt text](./assets/sdk.png)
 
+In order to keep track of what resources were created, we take advantage of a `.serverlessq-config.json` file. It is important to commit this file to your repository as it maps your created queue/cron id to the correspoding API function.
+
 ## Queue
 ### Create a Queue from an API Function
 
@@ -89,8 +91,7 @@ You can have several queues in multiple queue functions.
 export default Queue({
     options: {
         name: 'SendNewsletter',
-        retries: 2,
-        urlToOverrideWhenRunningLocalhost: 'https://5923-2001-16b8-2ad0-1a00-830-bf28-256f-a5ae.eu.ngrok.io/api/queue'
+        retries: 2
     },
     handler: (req, res) => {
         res.status(200).json({ name: 'John Doe' })
@@ -152,7 +153,7 @@ export default Cron({
 <br/>
 
 ## Security
-Every request from our service contains a specific header `x-serverlessq-signature`. This signature is a hmac based on the request target and your API token. We use this signature to verify that the request is coming from our service. If you want to verify the request you can use our implementation `verifySignature` or write your own.
+Every request from our service contains a specific header `x-serverlessq-signature`. This signature is a hmac hash created from the request target and your API token. We use this signature to verify that the request is coming from our service. If you want to verify the request you can use our implementation `verifySignature` or write your own.
 
 ```ts
 import { verifySignature, Cron } from '@serverlessq/nextjs'
@@ -164,7 +165,7 @@ export default Cron({
         retries: 3,
         expression: '0 18 ? * MON-FRI *', // runs at 6:00 PM every weekday (Monday through Friday)
         target: 'https://5923-2001-16b8-2ad0-1a00-830-bf28-256f-a5ae.eu.ngrok.io/api/queue',
-        method: 'POST',
+        method: 'POST'
     },
     handler: (req, res) => {
         
@@ -182,9 +183,7 @@ We have full TypeScript support of course ✨
 
 ## Local Development
 
-ServerlessQ runs on the cloud. That means if you work locally on a queue and want to test enqueueing jobs you need to override the parameter `urlToOverrideWhenRunningLocalhost` in the queue options.
-This url will only be used if the environment variable `VERCEL` is not set. You can use a service such as [ngrok](https://ngrok.com/). Ngrok gives you a deployed
-Webhook URL and you can run a local CLI which listens to all of these incoming requests. This is a great way to test your queue.
+ServerlessQ runs on the cloud. That means if you work locally on a queue or cron a proxy is necessary to forward your request back to your local machine. In order to ease your life we create a local proxy (by using [localtunnel](https://localtunnel.me/)) for you once you start your development server with `next dev`. 
 
 If you need help with that please contact us! 💬
 
