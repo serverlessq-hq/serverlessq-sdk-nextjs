@@ -1,0 +1,81 @@
+{
+  "name": "@serverlessq/nextjs",
+  "version": "2.0.0",
+  "description": "The SDK to utilize managed queues and crons by ServerlessQ",
+  "homepage": "https://serverlessq.com",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "keywords": [
+    "Serverless Queue",
+    "Cron Job",
+    "Vercel",
+    "Serverless",
+    "Next.js"
+  ],
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "format": "prettier --write ./lib",
+    "lint": "eslint . --ext .ts --cache",
+    "lint:fix": "yarn lint --fix",
+    "test": "jest",
+    "pre-commit": "lint-staged",
+    "prepublishOnly": "rm -rf dist && pnpm run build"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn lint-staged && pnpm run build"
+    }
+  },
+  "lint-staged": {
+    "lib/**/*.ts": [
+      "pnpm run eslint --fix --cache",
+      "pnpm run format",
+      "git add"
+    ]
+  },
+  "prettier": {
+    "tabWidth": 2,
+    "semi": false,
+    "useTabs": false,
+    "singleQuote": true,
+    "arrowParens": "avoid",
+    "trailingComma": "none"
+  },
+  "devDependencies": {
+    "@jest/globals": "29.5.0",
+    "@types/localtunnel": "2.0.1",
+    "@types/node": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.29.0",
+    "eslint": "^7.32.0 || ^8.2.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.25.2",
+    "husky": "^2.4.1",
+    "jest": "29.5.0",
+    "lint-staged": "^8.2.1",
+    "msw": "^0.42.3",
+    "prettier": "^2.6.2",
+    "ts-jest": "29.1.0",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "@typescript-eslint/typescript-estree": "5.59.6",
+    "axios": "^0.27.2",
+    "chokidar": "^3.5.3",
+    "localtunnel": "2.0.2"
+  },
+  "peerDependencies": {
+    "next": "^12.1.4 || ^13"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/serverlessq-hq/serverlessq-nextjs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/serverlessq-hq/serverlessq-nextjs/issues"
+  }
+}

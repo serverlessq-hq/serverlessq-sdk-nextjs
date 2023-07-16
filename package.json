@@ -1,0 +1,19 @@
+{
+    "name": "serverlessq-sdk",
+    "version": "0.0.0",
+    "private": true,
+    "homepage": "https://serverlessq.com",
+    "license": "MIT",
+    "keywords": [
+        "serverlessq",
+        "message queue",
+        "sdk"
+    ],
+    "scripts": {
+        "build": "turbo build",
+        "dev": "turbo dev"
+    },
+    "devDependencies": {
+        "turbo": "^1.10.7"
+    }
+}
