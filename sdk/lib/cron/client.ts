@@ -1,5 +1,6 @@
 import { createError, http } from '../utils/axios'
 import {
+  BASE_URL,
   IS_VERCEL,
   OPTIONS_ERROR_MESSAGE,
   SLASH_ERROR_MESSAGE,
@@ -24,7 +25,7 @@ export type Cron = {
 export const upsertCron = async (options: CronOptions) => {
   validateOptionsOrThrow(options)
   const { method, retries = 3, expression, name } = options
-  let baseUrl = IS_VERCEL ? `https://${VERCEL_URL}` : process.env.BASE_URL
+  let baseUrl = IS_VERCEL ? `https://${VERCEL_URL}` : BASE_URL
 
   if (checkStringForSlashes(name)) {
     throw new Error(SLASH_ERROR_MESSAGE)
