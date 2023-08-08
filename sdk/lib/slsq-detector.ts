@@ -1,12 +1,11 @@
 import * as chokidar from 'chokidar'
-import * as path from 'path'
-import * as fs from 'fs/promises'
 import { createHash } from 'crypto'
-import { parseFile, ParseFileResponse } from './utils/parser'
-import { upsertQueue } from './queue/client'
+import * as fs from 'fs/promises'
+import * as path from 'path'
 import { upsertCron } from './cron/client'
+import { upsertQueue } from './queue/client'
 import { __VERBOSE__ } from './utils/constants'
-import { useMetadata } from './utils/flag-file'
+import { parseFile, ParseFileResponse } from './utils/parser'
 
 export class SlsqDetector {
   private static instance: SlsqDetector
@@ -64,28 +63,12 @@ export class SlsqDetector {
   private async onChanged(params: ParseFileResponse) {
     try {
       if (params.type === 'cron') {
-        let target = params.options.target
-        if (!this.isProduction) {
-          const metadata = await useMetadata()
-
-          // removes the leading slash
-          const cronTarget = params.options.target.replace(/^\//g, '')
-          target = `${metadata.proxy}/${cronTarget}`
-          if (__VERBOSE__) {
-            console.log(
-              'Setting cron target with proxy to ',
-              target,
-              'from',
-              params.options.target
-            )
-          }
-        }
         await upsertCron({
           expression: params.options.expression,
           method: params.options.method,
           name: params.options.name,
           retries: params.options.retries,
-          target: target
+          target: params.options.target
         })
       }
       if (params.type === 'queue') {
