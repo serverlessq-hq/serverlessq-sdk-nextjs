@@ -1,8 +1,11 @@
-import Newsletter from './api/queue'
+import ImageQueue from './api/image-queue'
 
 export async function getServerSideProps(
 ) {
-  const result = await Newsletter.enqueue({ method: 'POST', body: { email: 'test@mail.com' }})
+  const result = await ImageQueue.enqueue({
+    method: "POST",
+    body: { email: "test@mail.com" },
+  });
 
   return {
     props: {
