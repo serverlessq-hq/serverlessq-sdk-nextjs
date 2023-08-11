@@ -1,13 +1,13 @@
 import { Queue } from "@serverlessq/nextjs";
-import { NextApiRequest, NextApiResponse } from "next";
 
 export default Queue({
   options: {
     name: "hello",
-    route: "api/hello",
+    route: "api/queue",
     retries: 3,
   },
-  handler: async (_req: NextApiRequest, res: NextApiResponse) => {
+  handler: async (_req, res) => {
+    console.log("Hello from the queue!")
     res.status(200).json({ name: "John Doe" });
   },
 });

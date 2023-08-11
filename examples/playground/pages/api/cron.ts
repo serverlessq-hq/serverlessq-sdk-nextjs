@@ -3,6 +3,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 
 export default Cron({
     handler: async (_req: NextApiRequest, res: NextApiResponse) => {
+        console.log("Hello from the cron!")
         res.status(200).json({ name: 'John Doe' })
     },
     options: {
