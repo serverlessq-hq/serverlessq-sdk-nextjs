@@ -7,7 +7,8 @@ export default Queue({
     route: "api/image-queue",
     retries: 3,
   },
-  handler: async (_req: NextApiRequest, res: NextApiResponse) => {
+  handler: async (req: NextApiRequest, res: NextApiResponse) => {
+    console.log("Message arrived!", req.body)
     res.status(200).json({ status: "Image transformed ✅" });
   },
 });
