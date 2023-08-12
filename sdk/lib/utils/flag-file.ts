@@ -1,8 +1,10 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import { KV } from '../types';
 import { __VERBOSE__ } from './constants';
 
-export const FLAG_FILE = '.serverlessq-config.json';
+export const FLAG_FILE = path.join(process.cwd(), '.serverlessq-config.json');
+
 const PROCESS_END_EVENTS = ['exit', 'beforeExit', 'uncaughtException', 'unhandledRejection', 'SIGINT', 'SIGTERM'];
 
 const createUnlinkListener = () => {
