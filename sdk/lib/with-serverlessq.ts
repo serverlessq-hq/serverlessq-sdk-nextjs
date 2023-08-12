@@ -36,7 +36,7 @@ async function registerProxy() {
 }
 
 export const withServerlessQ = (nextConfig: NextConfig) => async (phase: Phase) => {
-  ensureSingleExecution({
+  await ensureSingleExecution({
     onExecution: async () => {
       if(__VERBOSE__) {
         console.log('Starting ServerlessQ plugin with verbose logs')
@@ -55,7 +55,7 @@ export const withServerlessQ = (nextConfig: NextConfig) => async (phase: Phase) 
 
   return Object.assign({}, nextConfig, {
     webpack(config: any, options: WebpackConfigContext) {
-      if (!options.isServer) {
+      if (!options.isServer && !options.dev) {
         config.plugins.push(
           new CopyPlugin({
             patterns: [
