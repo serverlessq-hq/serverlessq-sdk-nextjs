@@ -8,6 +8,7 @@ const nextConfig = {
       test: /\.node$/,
       loader: "node-loader",
     });
+
     return config
   },
 };

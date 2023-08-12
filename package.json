@@ -11,7 +11,8 @@
     ],
     "scripts": {
         "build": "turbo build",
-        "dev": "turbo dev"
+        "dev": "turbo dev",
+        "start": "turbo start"
     },
     "devDependencies": {
         "turbo": "^1.10.7"

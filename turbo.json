@@ -19,6 +19,13 @@
                 "dist/**",
                 ".next/**"
             ]
+        },
+        "start": {
+            "dependsOn": [
+                "^build"
+            ],
+            "cache": false,
+            "persistent": true
         }
     }
 }

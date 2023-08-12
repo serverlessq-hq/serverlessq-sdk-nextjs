@@ -4,7 +4,9 @@ import { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_BUILD, PHASE_PRODUCTION_SERV
 import { SlsqDetector } from "./slsq-detector";
 import { isProduction } from './utils';
 import { __VERBOSE__ } from './utils/constants';
-import { ensureSingleExecution, setMetadata } from "./utils/flag-file";
+import { FLAG_FILE, ensureSingleExecution, setMetadata } from "./utils/flag-file";
+import CopyPlugin from 'copy-webpack-plugin'
+import { WebpackConfigContext } from 'next/dist/server/config-shared';
 
 const watchModePhases = [PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_BUILD, PHASE_PRODUCTION_SERVER]
 type Phase = typeof watchModePhases[number]
@@ -51,5 +53,26 @@ export const withServerlessQ = (nextConfig: NextConfig) => async (phase: Phase) 
     isProduction: isProduction(phase)
   });
 
-  return nextConfig
+  return Object.assign({}, nextConfig, {
+    webpack(config: any, options: WebpackConfigContext) {
+      if (!options.isServer) {
+        config.plugins.push(
+          new CopyPlugin({
+            patterns: [
+              {
+                from: FLAG_FILE,
+                to: 'static'
+              },
+            ],
+          })
+        );
+      }
+
+      if (typeof nextConfig.webpack === 'function') {
+        return nextConfig.webpack(config, options)
+      }
+
+      return config
+    },
+  })
 }
