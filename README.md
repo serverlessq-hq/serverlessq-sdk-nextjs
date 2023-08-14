@@ -2,9 +2,6 @@
   <a aria-label="NPM version" href="https://www.npmjs.com/package/@serverlessq/nextjs">
     <img alt="" src="https://badgen.net/npm/v/@serverlessq/nextjs">
   </a>
-  <a aria-label="Package size" href="https://bundlephobia.com/result?p=@serverlessq/nextjs">
-    <img alt="" src="https://badgen.net/bundlephobia/minzip/@serverlessq/nextjs">
-  </a>
   <a aria-label="License" href="https://github.com/vercel/swr/blob/main/LICENSE">
     <img alt="" src="https://badgen.net/npm/license/@serverlessq/nextjs">
   </a>
@@ -12,44 +9,44 @@
 
 ## Introduction
 
-`@serverlessQ/nextjs` is a lightweight wrapper to easily utilize the managed queue by [ServerlessQ](https://serverlessq.com).
+`@serverlessQ/nextjs` is a lightweight wrapper to easily utilize message queues and cron jobs from [ServerlessQ](https://serverlessq.com).
 
-The SDK is for NextJS projects deployed on Vercel and makes use of Vercel environment variables.
+The version 2 has some amazing new features:
 
-ServerlessQ lets you easily create **Message Queues** and **Cron Jobs** to truly build asynchronous systems.
+1. Local file watcher: Create your API route with your message queue. We will deploy them automatically to ServerlessQ. No need to leave your IDE!
+2. Local Proxy: We've included a local proxy into the SDK. With that you receive enqueues messages and cron requests directly to your local machine. This brings your local machine even closer to production.
+3. Create queues and crons from code.
+
+The SDK is specifically for Next.JS projects. If the projects are deployed to Vercel we make use of Vercel's environment variables. But the SDK also works on any other deployment provider!
+
+ServerlessQ is the **missing piece** on Vercel to add asynchronous tasks!
 
 ---
 
-**View full documentation and examples on [docs.serverlessq.com](https://docs.serverlessq.com).**
+You can find the full docs for the SDK Version 2 [here](https://docs.serverlessq.com/sdks/next_2_0).
 
 <br/>
 
 ## Installation
+
 Install the library through your desired package manager
 
-```
+```bash
 yarn add @serverlessq/nextjs
-```
-
-```
 npm i @serverlessq/nextjs
-```
-
-```
 pnpm i @serverlessq/nextjs
 ```
 
 <br/>
 
-This library gives you easy access for using [ServerlessQ](https://serverlessq.com).
-
 ## Environment Variables
 
-You need to set the `SERVERLESSQ_API_TOKEN` to have access to the system.
+You need to set the `SERVERLESSQ_API_TOKEN` to connect your Next.JS project with ServerlessQ.
 
-1. Create an account at [app.serverlessq.com](https://app.serverlessq.com) and follow the steps described in our [documentation](https://docs.serverlessq.com/sdks/javascript) to get the API token.
+1. Create an account on [ServerlessQ](https://app.serverlessq.com) and follow the steps described in our [documentation](https://docs.serverlessq.com/sdks/javascript) to get the API token.
+2. Go to the [dashboard](https://app.serverlessq.com/settings?tab=account), you will find your API token here
 
-> 💡 you can also use our [Vercel Integration](https://vercel.com/integrations/serverlessq) to automate that task 🙂
+> 💡 If you application is deployed on Vercel, you can use our [Vercel Integration](https://vercel.com/integrations/serverlessq) to automate that task 🙂
 
 If you want to use this library locally  please create `.env.local` file with the following value:
 
@@ -72,42 +69,51 @@ New for you? Go check out the official next.js docs on [how to create env files 
 
 <br/>
 
-## Setup the SDK
-Within your `next.config.js` file you need to add the following code:
+## SDK Setup
+
+Other than the environment variable there is only one more prerequisite to get the SDK running.
+
+You need to add the function `withServerlessQ` in your `next.config.js` and wrap your next config with it.
 
 ```ts
-const { withServerlessQ } = require('@serverlessq/nextjs')
-
+const { withServerlessQ } = require("@serverlessq/nextjs");
 
 module.exports = withServerlessQ({
   // your nextjs config
-})
+});
 ```
 
-What does this do? If you are running your NextJS application locally e.g. through `next dev` it will start to watch the `/api` folder for changes. If you import a queue or cron it will automatically create the corresponding API function for you and will update their settings on save. In order to prevent to override production queues/crons it will only create the corresponding resources with a prefix `DEV_` if you are running your application locally. If you create a production build through `next build` it will create the resources without the prefix.
+This will enable two things:
 
-![Alt text](./assets/sdk.png)
+1. We run a local file watcher and deploy your newly created queues & cron jobs **automatically** to ServerlessQ. If they are created in development mode we prefix them with `DEV_`
+2. We start a local proxy to allow you to receive enqueued messages and cron jobs on your local PC.
+
 
 In order to keep track of what resources were created, we take advantage of a `.serverlessq-config.json` file for local development and `.serverlessq-config.production.json` for production builds. It is important to commit this file to your repository as it maps your created queue/cron id to the corresponding API function.
 
+
+![SDK](./assets/sdk.png)
+
 ## Queue
+
 ### Create a Queue from an API Function
 
-Create a new [API Route](https://nextjs.org/docs/api-routes/introduction) within your NextJS application, e.g. `pages/api/queue`.
+Create a new [API Route](https://nextjs.org/docs/api-routes/introduction) within your Next.JS application, e.g. `pages/api/queue`.
 
 You can have several queues in multiple queue functions.
 
 ```ts
 // pages/api/queue
 export default Queue({
-    options: {
-        name: 'SendNewsletter',
-        retries: 2
-    },
-    handler: (req, res) => {
-        res.status(200).json({ name: 'John Doe' })
-    }
-})
+  options: {
+    name: "SendNewsletter",
+    route: "api/queue",
+    retries: 2,
+  },
+  handler: (req, res) => {
+    return sres.status(200).json({ name: "John Doe" });
+  },
+});
 ```
 
 <br/>
@@ -120,79 +126,84 @@ You can do this either from `getServerSideProps` or from another API function.
 
 ```ts
 // pages/api/enqueue or getServerSideProps
-import { NextApiRequest, NextApiResponse } from 'next'
-import testQueue from './queue'
+import { NextApiRequest, NextApiResponse } from "next";
+import testQueue from "./queue";
 
 export default async function enqueue(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   try {
-    const result = await testQueue.enqueue({ method: 'GET' })
-    res.json({ status: 'success', ...result })
+    const result = await testQueue.enqueue({ method: "GET" });
+    res.json({ status: "success", ...result });
   } catch (e) {
-    res.json({ status: 'failed' })
+    res.json({ status: "failed" });
   }
 }
 ```
 
-## Crons
+## Cron Jobs
 
 ### Create a Cronjob from an API Function
 
-You need to create the expression according to this [Cron Syntax](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html?icmpid=docs_console_unmapped#cron-based).
+Creating a Cron job is as easy as creating a queue.
 
 ```ts
-import { Cron } from '@serverlessq/nextjs'
-
 // pages/api/cleanup
+import { Cron } from "@serverlessq/nextjs";
+import { NextApiRequest, NextApiResponse } from "next";
+
 export default Cron({
-    options: {
-        name: 'CleanupDb',
-        retries: 3,
-        expression: '0 18 ? * MON-FRI *', // runs at 6:00 PM every weekday (Monday through Friday)
-        target: 'https://5923-2001-16b8-2ad0-1a00-830-bf28-256f-a5ae.eu.ngrok.io/api/queue',
-        method: 'POST',
-    },
-    handler: (req, res) => {
-        // do something
-        res.status(200).json({ status: 'OK' })
-    }
-})
+  handler: async (_req: NextApiRequest, res: NextApiResponse) => {
+    console.log("Hello from the cron!");
+    return res.status(200).json({ name: "John Doe" });
+  },
+  options: {
+    expression: "0 */10 * * ? *",
+    retries: 3,
+    method: "GET",
+    name: "hello",
+    target: "api/cron",
+  },
+});
 ```
+
+The `expressions` needs to follow the following syntax: [AWS Scheduler Syntax](https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html?icmpid=docs_console_unmapped#cron-based).
 
 <br/>
 
 ## Security
-Every request from our service contains a specific header `x-serverlessq-signature`. This signature is a hmac hash created from the request target and your API token. We use this signature to verify that the request is coming from our service. If you want to verify the request you can use our implementation `verifySignature` or write your own.
+
+Every request from our service contains a specific header `x-serverlessq-signature`. This signature is a HMAC hash created from the request target and your API token. We use this signature to verify that the request is coming from our service. If you want to verify the request you can use our implementation `verifySignature` or write your own.
 
 ```ts
-import { verifySignature, Cron } from '@serverlessq/nextjs'
-
 // pages/api/cleanup
-export default Cron({
-    options: {
-        name: 'CleanupDb',
-        retries: 3,
-        expression: '0 18 ? * MON-FRI *', // runs at 6:00 PM every weekday (Monday through Friday)
-        target: 'https://5923-2001-16b8-2ad0-1a00-830-bf28-256f-a5ae.eu.ngrok.io/api/queue',
-        method: 'POST'
-    },
-    handler: (req, res) => {
-        
-        if(!verifySignature(req, target)) {
-            return res.status(401).json({ status: 'Unauthorized' })
-        }
+import { verifySignature, Cron } from "@serverlessq/nextjs";
+import { NextApiRequest, NextApiResponse } from "next";
 
-        return res.status(200).json({ status: 'OK' })
+export default Cron({
+  handler: async (_req: NextApiRequest, res: NextApiResponse) => {
+    if (!verifySignature(req, target)) {
+      return res.status(401).json({ status: "Unauthorized" });
     }
-})
+    console.log("Hello from the cron!");
+    return res.status(200).json({ name: "John Doe" });
+  },
+  options: {
+    expression: "0 */10 * * ? *",
+    retries: 3,
+    method: "GET",
+    name: "hello",
+    target: "api/cron",
+  },
+});
 ```
+
 ## Types
 
 We have full TypeScript support of course ✨
 
-## Local Development
+## Support
 
 ServerlessQ runs on the cloud. That means if you work locally on a queue or cron a proxy is necessary to forward your request back to your local machine. In order to ease your life we create a local proxy (by using [localtunnel](https://localtunnel.me/)) for you once you start your development server with `next dev`. 
 
@@ -218,7 +229,7 @@ Dev cron jobs will still be executed, but will result in errors, as they proxy t
 
 Furthermore, the resources can take up to 15 seconds to be fully created. You can only delete the resources after they are created. 
 
-If you need help with that please contact us! 💬
+If you need help with anything join our [Discord server](https://discord.gg/XXR5TDEv4d) and hit us up! 💬
 
 ## Working with Existing Queues
 
@@ -249,23 +260,23 @@ export default async function handler(
 You can use the `enqueue` function to directly enqueue a job to a certain `Queue-ID`.
 
 ## Verbose Logs
-If you encounter errors while using the SDK you can enable verbose logs by setting the environment variable `SLSQ_VERBOSE` to `true` in your `.env.local` file. This will give you more information about the error and the SDK lifecycle. Feel free to attach these logs to your support request.
 
-## Support
-If you need help with the SDK or have any questions please contact us at
-- Discord
-- Issue Tracker on Github
+If you encounter errors while using the SDK you can enable verbose logs by setting the environment variable `SLSQ_VERBOSE` to `true` in your `.env.local` file. This will give you more information about the error and the SDK lifecycle. Feel free to attach these logs to your support request.
 
 ## Milestone
 
 - [x] Enqueue messages with ServerlessQ
-- [x] Build Wrapper for NextJS API Routes
+- [x] Build Wrapper for Next.JS API Routes
 - [x] Allow dynamic queue creation
 - [x] Allow dynamic creation of cron jobs
 - [x] Implement a local proxy for testing queues and crons
 - [ ] Add the option for advanced queue options e.g. filter, tags
 
 <br/>
+
+## Example Project
+
+We have an example project in our [GitHub repository](https://github.com/serverlessq-hq/serverlessq-sdk-nextjs/tree/main/examples/playground)
 
 ## License
 
