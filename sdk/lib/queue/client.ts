@@ -1,5 +1,5 @@
 import { checkStringForSlashes } from '../utils/sanitize-input'
-import { IS_VERCEL, OPTIONS_ERROR_MESSAGE, VERCEL_URL, __VERBOSE__ } from '../utils/constants'
+import { BASE_URL, IS_VERCEL, OPTIONS_ERROR_MESSAGE, VERCEL_URL, __VERBOSE__ } from '../utils/constants'
 import { AxiosRequestConfig } from 'axios'
 import { http, createError } from '../utils/axios'
 import { HttpMethod } from '../types'
@@ -70,7 +70,7 @@ export const enqueue = async (params: EnqueueOptions & { queueIdToOverride?: str
 
   
   let queueId = params.queueIdToOverride;
-  let baseUrl = IS_VERCEL ? `https://${VERCEL_URL}` : '';
+  let baseUrl = IS_VERCEL ? `https://${VERCEL_URL}` : BASE_URL;
 
   const metadata = await useMetadata()
   const proxy = metadata['proxy']
