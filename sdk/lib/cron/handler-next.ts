@@ -10,18 +10,17 @@ export interface CronOptions {
 }
 
 export function Cron(params: {
-  handler: NextApiHandler,
-  options: CronOptions
+  handler: NextApiHandler
+  options: Omit<CronOptions, 'name' | 'target'>
 }) {
-
   const { handler } = params
-  
+
   async function nextApiHandler(
     req: NextApiRequest,
     res: NextApiResponse
   ): Promise<unknown> {
     return handler(req, res)
   }
-  
+
   return nextApiHandler
 }

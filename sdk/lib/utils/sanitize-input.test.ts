@@ -1,5 +1,5 @@
 import { removeLeadingAndTrailingSlashes } from './sanitize-input'
-import { expect, test } from '@jest/globals'
+import { expect, test } from 'vitest'
 
 test(removeLeadingAndTrailingSlashes.name, () => {
   expect(removeLeadingAndTrailingSlashes('')).toBe('')

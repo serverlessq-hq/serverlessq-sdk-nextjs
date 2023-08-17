@@ -8,8 +8,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
 export default Queue({
   options: {
-    name: "newsletter-queue",
-    route: "api/newsletter-queue",
     retries: 3,
   },
   handler

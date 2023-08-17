@@ -64,15 +64,17 @@ export class SlsqDetector {
     try {
       if (params.type === 'cron') {
         await upsertCron({
+          name: params.name,
           expression: params.options.expression,
           method: params.options.method,
-          name: params.options.name,
           retries: params.options.retries,
-          target: params.options.target
+          target: params.route
         })
       }
       if (params.type === 'queue') {
-        await upsertQueue(params.options.name, {
+        await upsertQueue({
+          name: params.name,
+          route: params.route,
           retries: params.options.retries
         })
       }
@@ -94,7 +96,8 @@ export class SlsqDetector {
         'utf-8'
       )
       const slsqConfig = parseFile({
-        file: newContent,
+        fileContent: newContent,
+        fileName: filePath,
         isProduction: this.isProduction
       })
 

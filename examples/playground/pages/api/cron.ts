@@ -9,8 +9,6 @@ export default Cron({
     options: {
         expression: "0 */10 * * ? *",
         retries: 3,
-        method: "GET",
-        name: "hello",
-        target: "api/cron"
+        method: "GET"
     }
 });

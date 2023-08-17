@@ -1,9 +1,15 @@
-import { checkStringForSlashes } from '../utils/sanitize-input'
-import { BASE_URL, IS_VERCEL, OPTIONS_ERROR_MESSAGE, VERCEL_URL, __VERBOSE__ } from '../utils/constants'
+import {
+  BASE_URL,
+  IS_VERCEL,
+  OPTIONS_ERROR_MESSAGE,
+  VERCEL_URL,
+  __VERBOSE__
+} from '../utils/constants'
 import { AxiosRequestConfig } from 'axios'
 import { http, createError } from '../utils/axios'
 import { HttpMethod } from '../types'
 import { setMetadata, useMetadata } from '../utils/flag-file'
+import { QueueOptions } from './handler-next'
 
 type QueueResponse = {
   requestId: string
@@ -39,22 +45,14 @@ export type EnqueueOptionsWithQueueId = {
 
 type EnqueueOptions = Omit<EnqueueOptionsWithQueueId, 'queueId'>
 
-export const upsertQueue = async (
-  nameOfQueue: string,
-  options: { retries: number }
-) => {
-  if (checkStringForSlashes(nameOfQueue)) {
-    throw new Error('Queue name cannot contain slashes')
-  }
-
+export const upsertQueue = async (options: QueueOptions) => {
   try {
-    const queue = (
-      await http.post<Queue>(`/queues/${nameOfQueue}`, options)
-    ).data
+    const queue = (await http.post<Queue>(`/queues/${options.name}`, options))
+      .data
 
-    await setMetadata({ [nameOfQueue]: queue.id })
+    await setMetadata({ [options.name]: queue.id })
 
-    if(__VERBOSE__) {
+    if (__VERBOSE__) {
       console.log(`Queue created with id ${queue.id}`)
     }
     return queue
@@ -63,31 +61,32 @@ export const upsertQueue = async (
   }
 }
 
-export const enqueue = async (params: EnqueueOptions & { queueIdToOverride?: string }) => {
+export const enqueue = async (
+  params: EnqueueOptions & { queueIdToOverride?: string }
+) => {
   validateOptionsOrThrow(params)
 
-  const PREFIX = process.env.NODE_ENV === 'production' ? '' : 'DEV_';
+  const PREFIX = process.env.NODE_ENV === 'production' ? '' : 'DEV_'
 
-  
-  let queueId = params.queueIdToOverride;
-  let baseUrl = IS_VERCEL ? `https://${VERCEL_URL}` : BASE_URL;
+  let queueId = params.queueIdToOverride
+  let baseUrl = IS_VERCEL ? `https://${VERCEL_URL}` : BASE_URL
 
   const metadata = await useMetadata()
   const proxy = metadata['proxy']
 
-  if(proxy) {
+  if (proxy) {
     baseUrl = `${proxy}`
   }
 
-  if(!queueId) {  
+  if (!queueId) {
     queueId = metadata[`${PREFIX}${params.name}`]
-  
+
     if (!queueId) {
       throw new Error(`No queue id found for ${params.name}`)
     }
   }
 
-  if(!baseUrl) {
+  if (!baseUrl) {
     throw new Error('No baseUrl found')
   }
 
@@ -97,7 +96,7 @@ export const enqueue = async (params: EnqueueOptions & { queueIdToOverride?: str
       id: queueId,
       target: `${baseUrl}/${params.route.replace(/^\//g, '')}`
     },
-    ...(params.body && { json: params.body }),
+    ...(params.body && { data: params.body })
   }
 
   try {
@@ -107,8 +106,8 @@ export const enqueue = async (params: EnqueueOptions & { queueIdToOverride?: str
   }
 }
 
-  const validateOptionsOrThrow = (options: EnqueueOptions) => {
-    if (!options.route || !options.method) {
-      throw new Error(OPTIONS_ERROR_MESSAGE)
-    }
+const validateOptionsOrThrow = (options: EnqueueOptions) => {
+  if (!options.method) {
+    throw new Error(OPTIONS_ERROR_MESSAGE)
+  }
 }

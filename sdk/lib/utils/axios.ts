@@ -2,7 +2,7 @@ import axios from 'axios'
 import { ENV_ERROR_MESSAGE, __VERBOSE__ } from './constants'
 
 export const createError = (error: Error | any, origin: string) => {
-  if(__VERBOSE__) {
+  if (__VERBOSE__) {
     console.log(`Error while ${origin}`, error)
   }
   if (axios.isAxiosError(error)) {
@@ -33,4 +33,3 @@ http.interceptors.request.use(config => {
 
 http.defaults.headers.common['Accept'] = 'application/json'
 http.defaults.headers.post['Content-Type'] = 'application/json'
-
