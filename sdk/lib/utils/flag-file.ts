@@ -38,7 +38,7 @@ export const ensureSingleExecution = async (params: { onExecution: Function, isP
         }
       }else {
         if (__VERBOSE__) {
-            console.log(`Config file ${FLAG_FILE} found`)
+            console.log(`ServerlessQ config file found. Skipping execution. If you want to create a production build delete the ${FLAG_FILE} file and try again.`)
           }
       }
 

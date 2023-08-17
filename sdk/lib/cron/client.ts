@@ -40,7 +40,7 @@ export const upsertCron = async (options: CronOptions) => {
   }
 
   if (!baseUrl) {
-    throw new Error('No baseUrl found')
+    throw new Error(`No baseUrl found for cron. If you create a local production build please set a SLSQ_BASE_URL in your .env.local file. If you deploy to Vercel this is set automatically within your pipeline.`)
   }
 
   let isValidUrl = true
