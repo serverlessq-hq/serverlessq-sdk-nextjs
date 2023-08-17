@@ -81,6 +81,12 @@ export const withServerlessQ =
           )
         }
 
+        config.module.rules.push({
+          test: /\.node$/,
+          loader: "node-loader",
+        });
+
+
         if (typeof nextConfig.webpack === 'function') {
           return nextConfig.webpack(config, options)
         }
