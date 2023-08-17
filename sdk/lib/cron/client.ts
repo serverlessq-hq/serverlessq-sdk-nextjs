@@ -1,4 +1,8 @@
-import { createError, http } from '../utils/axios'
+import {
+  checkIfResourcesConflictError,
+  createError,
+  http
+} from '../utils/axios'
 import {
   BASE_URL,
   IS_VERCEL,
@@ -86,6 +90,25 @@ export const upsertCron = async (options: CronOptions) => {
     return resp.data
   } catch (error) {
     return createError(error, 'could not create or update cron')
+  }
+}
+
+export const deleteCron = async (nameOfCron: string) => {
+  try {
+    const resp = await http.delete<void>(`/crons/${nameOfCron}`)
+
+    if (__VERBOSE__) {
+      console.log(`Cron ${nameOfCron} deleted`)
+    }
+    return resp.data
+  } catch (error) {
+    if (checkIfResourcesConflictError(error)) {
+      console.log(
+        `Cron ${nameOfCron} not deleted as it is currently in creation`
+      )
+      return createError(error, 'Cron is currently in creation')
+    }
+    return createError(error, 'could not delete cron')
   }
 }
 

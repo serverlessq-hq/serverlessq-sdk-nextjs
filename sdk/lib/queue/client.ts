@@ -1,3 +1,10 @@
+import { AxiosRequestConfig } from 'axios'
+import { HttpMethod } from '../types'
+import {
+  checkIfResourcesConflictError,
+  createError,
+  http
+} from '../utils/axios'
 import {
   BASE_URL,
   IS_VERCEL,
@@ -5,9 +12,6 @@ import {
   VERCEL_URL,
   __VERBOSE__
 } from '../utils/constants'
-import { AxiosRequestConfig } from 'axios'
-import { http, createError } from '../utils/axios'
-import { HttpMethod } from '../types'
 import { setMetadata, useMetadata } from '../utils/flag-file'
 import { QueueOptions } from './handler-next'
 
@@ -106,8 +110,30 @@ export const enqueue = async (
   }
 }
 
+export const deleteQueue = async (nameOfQueue: string) => {
+  try {
+    const resp = await http.request<void>({
+      method: 'DELETE',
+      url: `/queues/${nameOfQueue}`
+    })
+
+    if (__VERBOSE__) {
+      console.log(`Queue ${nameOfQueue} deleted`)
+    }
+    return resp.data
+  } catch (error) {
+    if (checkIfResourcesConflictError(error)) {
+      console.log(
+        `Queue ${nameOfQueue} not deleted as it is currently in creation`
+      )
+      return createError(error, 'Queue is currently in creation')
+    }
+    return createError(error, 'could not delete queue')
+  }
+}
+
 const validateOptionsOrThrow = (options: EnqueueOptions) => {
-  if (!options.method) {
+  if (!options.route || !options.method) {
     throw new Error(OPTIONS_ERROR_MESSAGE)
   }
 }

@@ -2,10 +2,25 @@ import * as chokidar from 'chokidar'
 import { createHash } from 'crypto'
 import * as fs from 'fs/promises'
 import * as path from 'path'
-import { upsertCron } from './cron/client'
-import { upsertQueue } from './queue/client'
+import { deleteCron, upsertCron } from './cron/client'
+import { deleteQueue, upsertQueue } from './queue/client'
 import { __VERBOSE__ } from './utils/constants'
-import { parseFile, ParseFileResponse } from './utils/parser'
+import { ParseFileResponse, parseFile } from './utils/parser'
+
+const END_SIGNALS = [
+  'SIGHUP',
+  'SIGINT',
+  'SIGQUIT',
+  'SIGILL',
+  'SIGTRAP',
+  'SIGABRT',
+  'SIGBUS',
+  'SIGFPE',
+  'SIGUSR1',
+  'SIGSEGV',
+  'SIGUSR2',
+  'SIGTERM'
+]
 
 export class SlsqDetector {
   private static instance: SlsqDetector
@@ -26,6 +41,17 @@ export class SlsqDetector {
     this.watcher.on('ready', async () => {
       this.ready = true
     })
+
+    if (!this.isProduction) {
+      for (const event of END_SIGNALS) {
+        process.on(event, async () => {
+          if (__VERBOSE__) {
+            console.log('Deleting all ServerlessQ DEV resources')
+          }
+          await this.deleteOnEndEvent()
+        })
+      }
+    }
   }
 
   public static getInstance(params: { isProduction: boolean }): SlsqDetector {
@@ -49,14 +75,44 @@ export class SlsqDetector {
       this.watcher.on('ready', resolve)
     })
   }
+  private async deleteOnEndEvent() {
+    const promises = new Array<Promise<void>>()
 
-  // TODO implement
+    this.hashTable.forEach(async (_, filePath) => {
+      if (filePath) {
+        const content = await fs.readFile(
+          path.join(this.cwd, filePath),
+          'utf-8'
+        )
+        const slsqConfig = parseFile({
+          fileContent: content,
+          fileName: filePath,
+          isProduction: this.isProduction
+        })
+        if (!slsqConfig) {
+          if (__VERBOSE__)
+            console.log(
+              `[ServerlessQ] No ServerlessQ config found in ${filePath}`
+            )
+          return Promise.resolve()
+        }
+        promises.push(this.onDeleted(slsqConfig))
+      }
+    })
+    return await Promise.all(promises)
+  }
+
   private async onDeleted(params: ParseFileResponse) {
-    if (params.type === 'cron') {
-      // console.log('deleting cron', params.options)
-    }
-    if (params.type === 'queue') {
-      // console.log('deleting queue', params.options)
+    if (!this.isProduction) {
+      if (__VERBOSE__) {
+        console.log(`Deleting ${params.type} ${params.options.name}`)
+      }
+      if (params.type === 'cron') {
+        await deleteCron(params.options.name)
+      }
+      if (params.type === 'queue') {
+        await deleteQueue(params.options.name)
+      }
     }
   }
 

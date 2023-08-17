@@ -8,3 +8,4 @@ export const IS_VERCEL = process.env.VERCEL
 export const ENV_ERROR_MESSAGE =
   'Please set the environment variable SERVERLESSQ_API_TOKEN'
 export const __VERBOSE__ = process.env.SLSQ_VERBOSE === 'true'
+export const PROCESS_END_EVENTS = ['uncaughtException', 'unhandledRejection', 'SIGINT', 'SIGTERM'];
