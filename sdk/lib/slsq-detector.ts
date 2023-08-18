@@ -63,6 +63,7 @@ export class SlsqDetector {
           fileName: filePath,
           isProduction: this.isProduction
         })
+
         if (!slsqConfig) {
           if (__VERBOSE__)
             console.log(
@@ -79,13 +80,13 @@ export class SlsqDetector {
   private async onDeleted(params: ParseFileResponse) {
     if (!this.isProduction) {
       if (__VERBOSE__) {
-        console.log(`Deleting ${params.type} ${params.options.name}`)
+        console.log(`Deleting ${params.type} ${params.name}`)
       }
       if (params.type === 'cron') {
-        await deleteCron(params.options.name)
+        await deleteCron(params.name)
       }
       if (params.type === 'queue') {
-        await deleteQueue(params.options.name)
+        await deleteQueue(params.name)
       }
     }
   }

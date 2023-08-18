@@ -26,7 +26,7 @@ const nodeEnvToURL = {
 }
 
 export const http = axios.create({
-  baseURL: nodeEnvToURL.development,
+  baseURL: nodeEnvToURL.production,
   timeout: 10000
 })
 
