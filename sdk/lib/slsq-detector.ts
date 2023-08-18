@@ -7,21 +7,6 @@ import { deleteQueue, upsertQueue } from './queue/client'
 import { __VERBOSE__ } from './utils/constants'
 import { ParseFileResponse, parseFile } from './utils/parser'
 
-const END_SIGNALS = [
-  'SIGHUP',
-  'SIGINT',
-  'SIGQUIT',
-  'SIGILL',
-  'SIGTRAP',
-  'SIGABRT',
-  'SIGBUS',
-  'SIGFPE',
-  'SIGUSR1',
-  'SIGSEGV',
-  'SIGUSR2',
-  'SIGTERM'
-]
-
 export class SlsqDetector {
   private static instance: SlsqDetector
   private watcher: chokidar.FSWatcher
@@ -41,17 +26,6 @@ export class SlsqDetector {
     this.watcher.on('ready', async () => {
       this.ready = true
     })
-
-    if (!this.isProduction) {
-      for (const event of END_SIGNALS) {
-        process.on(event, async () => {
-          if (__VERBOSE__) {
-            console.log('Deleting all ServerlessQ DEV resources')
-          }
-          await this.deleteOnEndEvent()
-        })
-      }
-    }
   }
 
   public static getInstance(params: { isProduction: boolean }): SlsqDetector {
@@ -75,7 +49,7 @@ export class SlsqDetector {
       this.watcher.on('ready', resolve)
     })
   }
-  private async deleteOnEndEvent() {
+  public async deleteOnEndEvent() {
     const promises = new Array<Promise<void>>()
 
     this.hashTable.forEach(async (_, filePath) => {

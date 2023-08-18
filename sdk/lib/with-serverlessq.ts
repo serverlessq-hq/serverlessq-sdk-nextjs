@@ -1,3 +1,4 @@
+import { addCleanupListener } from 'async-cleanup'
 import CopyPlugin from 'copy-webpack-plugin'
 import localtunnel from 'localtunnel'
 import { NextConfig } from 'next'
@@ -34,7 +35,14 @@ async function registerDetector(phase: Phase) {
 
   if (__IS_PROD__) {
     await detector.close()
+    return
   }
+  addCleanupListener(async () => {
+    if (__VERBOSE__) {
+      console.log('Deleting all ServerlessQ DEV resources')
+    }
+    await detector.deleteOnEndEvent()
+  })
 
   return
 }
