@@ -67,6 +67,15 @@ describe('parseFile', () => {
 })
 
 describe('extractMetaFromFilename', () => {
+  it('should extract the name from the current filepath', () => {
+    // given
+    const filePath = '/api/hello.ts'
+    // when
+    const name = extractMetaFromFilename(filePath).name
+    // then
+    expect(name).toBe('hello')
+
+  })
   it('should extract the route from the current filepath', () => {
     // given
     const filePath = '/index/api/hello.ts'

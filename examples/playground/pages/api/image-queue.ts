@@ -8,6 +8,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
 export default Queue({
   options: {
+    route: '/api/image-queue',
     retries: 3
   },
   handler

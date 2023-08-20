@@ -1,5 +1,4 @@
 import { HttpMethod } from '../types'
-import { fetchCalleStackTrace } from '../utils'
 import { extractMetaFromFilename } from '../utils/parser'
 import { enqueue } from './client'
 import { NextApiRequest, NextApiResponse, NextApiHandler } from 'next'
@@ -16,11 +15,11 @@ export interface EnqueueOptions {
 
 export function Queue(params: {
   handler: NextApiHandler
-  options: Omit<QueueOptions, 'name' | 'route'>
+  options: Omit<QueueOptions, 'name'>
 }) {
-  const { handler } = params
+  const { handler, options } = params
 
-  const meta = extractMetaFromFilename(fetchCalleStackTrace())
+  const meta = extractMetaFromFilename(options.route)
 
   async function nextApiHandler(
     req: NextApiRequest,
