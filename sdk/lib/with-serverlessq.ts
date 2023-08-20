@@ -1,3 +1,5 @@
+import { addCleanupListener } from 'async-cleanup'
+import CopyPlugin from 'copy-webpack-plugin'
 import localtunnel from 'localtunnel'
 import { NextConfig } from 'next'
 import {
@@ -5,6 +7,7 @@ import {
   PHASE_PRODUCTION_BUILD,
   PHASE_PRODUCTION_SERVER
 } from 'next/constants'
+import { WebpackConfigContext } from 'next/dist/server/config-shared'
 import { SlsqDetector } from './slsq-detector'
 import { isProduction } from './utils'
 import { __VERBOSE__ } from './utils/constants'
@@ -13,8 +16,6 @@ import {
   ensureSingleExecution,
   setMetadata
 } from './utils/flag-file'
-import CopyPlugin from 'copy-webpack-plugin'
-import { WebpackConfigContext } from 'next/dist/server/config-shared'
 
 const watchModePhases = [
   PHASE_DEVELOPMENT_SERVER,
@@ -34,7 +35,14 @@ async function registerDetector(phase: Phase) {
 
   if (__IS_PROD__) {
     await detector.close()
+    return
   }
+  addCleanupListener(async () => {
+    if (__VERBOSE__) {
+      console.log('Deleting all ServerlessQ DEV resources')
+    }
+    await detector.deleteOnEndEvent()
+  })
 
   return
 }

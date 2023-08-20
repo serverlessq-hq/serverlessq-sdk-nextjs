@@ -10,6 +10,14 @@ export const createError = (error: Error | any, origin: string) => {
   } else throw new Error(origin)
 }
 
+export const checkIfResourcesConflictError = (error: Error | any) => {
+  if (axios.isAxiosError(error)) {
+    if (error.response?.status === 409) {
+      return true
+    }
+  }
+  return false
+}
 const API_KEY = process.env.SERVERLESSQ_API_TOKEN
 
 const nodeEnvToURL = {
