@@ -17,6 +17,12 @@ export const buildCronTarget = (localTarget?: string) => {
   return `https://${VERCEL_URL}/${extractApiRoute(__filename)}`
 }
 
+/**
+ * Verifies if the request was sent from ServerlessQ
+ * @param req - the next api request for the incoming request
+ * @param payload - the target of the request i.e. <your-server-url>/api/queue
+ * @returns 
+ */
 export const verifySignature = (req: NextApiRequest, payload: string) => {
   const signature = createHmac(
     'sha256',

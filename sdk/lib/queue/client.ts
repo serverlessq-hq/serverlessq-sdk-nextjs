@@ -54,8 +54,12 @@ export const upsertQueue = async (
   isProduction: boolean
 ) => {
   try {
-    const queue = (await http.post<Queue>(`/queues/${options.name}`, options))
-      .data
+    const queue = (
+      await http.post<Queue>(`/queues/${options.name}`, {
+        ...options,
+        retries: options.retries || 1
+      })
+    ).data
 
     await setMetadata({ [options.name]: queue.id }, isProduction)
 
@@ -66,6 +70,16 @@ export const upsertQueue = async (
     return createError(error, 'could not create or update queue')
   }
 }
+
+/**
+ * 
+ * @param params.queueIdToOverride - the id of the queue to override @optional
+ * @param params.route - the route of the message queue i.e. /api/newsletter
+ * @param params.method - http method executed against the target
+ * @param params.name - the name of the queue
+ * @param params.body - the body of the request
+ * @returns the response from the queue in the format { requestId: string, message: string }
+ */
 
 export const enqueue = async (
   params: EnqueueOptions & { queueIdToOverride?: string }
