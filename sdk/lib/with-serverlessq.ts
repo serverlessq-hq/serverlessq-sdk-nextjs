@@ -61,6 +61,11 @@ async function registerProxy(isProd: boolean) {
   await setMetadata({ ['proxy']: tunnel?.url }, isProd)
 }
 
+/**
+ * Wrapper for the next.js config object to enable Serverlessq functionality
+ * @param nextConfig - the next config object
+ * @returns updated next config object
+ */
 export const withServerlessQ =
   (nextConfig: NextConfig) => async (phase: Phase) => {
     const isProd = isProduction(phase)
