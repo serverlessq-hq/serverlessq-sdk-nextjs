@@ -4,7 +4,7 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import { deleteCron, upsertCron } from './cron/client'
 import { deleteQueue, upsertQueue } from './queue/client'
-import { __VERBOSE__ } from './utils/constants'
+import { logVerbose } from './utils/logging'
 import { ParseFileResponse, parseFile } from './utils/parser'
 
 export class SlsqDetector {
@@ -25,6 +25,7 @@ export class SlsqDetector {
     this.watcher.on('unlink', this.on('deleted'))
     this.watcher.on('ready', async () => {
       this.ready = true
+      console.info('[ServerlessQ] Ready')
     })
   }
 
@@ -51,37 +52,40 @@ export class SlsqDetector {
   }
   public async deleteOnEndEvent() {
     const promises = new Array<Promise<void>>()
-
-    this.hashTable.forEach(async (_, filePath) => {
+    this.hashTable.forEach((_, filePath) => {
       if (filePath) {
-        const content = await fs.readFile(
-          path.join(this.cwd, filePath),
-          'utf-8'
-        )
-        const slsqConfig = parseFile({
-          fileContent: content,
-          fileName: filePath,
-          isProduction: this.isProduction
-        })
+        promises.push(
+          new Promise((resolve, reject) => {
+            return fs
+              .readFile(path.join(this.cwd, filePath), 'utf-8')
+              .then(async content => {
+                const slsqConfig = parseFile({
+                  fileContent: content,
+                  fileName: filePath,
+                  isProduction: this.isProduction
+                })
 
-        if (!slsqConfig) {
-          if (__VERBOSE__)
-            console.log(
-              `[ServerlessQ] No ServerlessQ config found in ${filePath}`
-            )
-          return Promise.resolve()
-        }
-        promises.push(this.onDeleted(slsqConfig))
+                if (!slsqConfig) {
+                  logVerbose(
+                    `[ServerlessQ] No ServerlessQ config found in ${filePath}`
+                  )
+                  resolve()
+                } else {
+                  return this.onDeleted(slsqConfig).then(() => resolve())
+                }
+              })
+          })
+        )
       }
     })
+
     return await Promise.all(promises)
   }
 
   private async onDeleted(params: ParseFileResponse) {
     if (!this.isProduction) {
-      if (__VERBOSE__) {
-        console.log(`Deleting ${params.type} ${params.name}`)
-      }
+      logVerbose(`[ServerlessQ] Deleting ${params.type} ${params.name}`)
+
       if (params.type === 'cron') {
         await deleteCron(params.name)
       }
@@ -89,33 +93,35 @@ export class SlsqDetector {
         await deleteQueue(params.name)
       }
     }
+    return Promise.resolve()
   }
 
   private async onChanged(params: ParseFileResponse) {
     try {
       if (params.type === 'cron') {
-        await upsertCron({
-          name: params.name,
-          expression: params.options.expression,
-          method: params.options.method,
-          retries: params.options.retries,
-          target: params.route
-        })
-      }
-      if (params.type === 'queue') {
-        await upsertQueue({
-          name: params.name,
-          route: params.route,
-          retries: params.options.retries
-        })
-      }
-    } catch (error) {
-      if (__VERBOSE__) {
-        console.log(
-          `Error while creating a ${params.type} for ServerlessQ`,
-          error
+        await upsertCron(
+          {
+            name: params.name,
+            expression: params.options.expression,
+            method: params.options.method,
+            retries: params.options.retries,
+            target: params.route
+          },
+          this.isProduction
         )
       }
+      if (params.type === 'queue') {
+        await upsertQueue(
+          {
+            name: params.name,
+            route: params.route,
+            retries: params.options.retries
+          },
+          this.isProduction
+        )
+      }
+    } catch (error) {
+      logVerbose(`[ServerlessQ] Error while creating a ${params.type}`)
     }
   }
 
@@ -135,18 +141,14 @@ export class SlsqDetector {
       const newRouteHash = this.toHash(newContent)
 
       if (currentRouteHash === newRouteHash) {
-        if (__VERBOSE__)
-          console.log(
-            `[ServerlessQ] No ${fileChangeType} detected in ${filePath}`
-          )
+        logVerbose(`[ServerlessQ] No ${fileChangeType} detected in ${filePath}`)
+
         return
       }
 
       if (!slsqConfig) {
-        if (__VERBOSE__)
-          console.log(
-            `[ServerlessQ] No ServerlessQ config found in ${filePath}`
-          )
+        logVerbose(`[ServerlessQ] No ServerlessQ config found in ${filePath}`)
+
         return
       }
 

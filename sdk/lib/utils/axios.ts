@@ -1,10 +1,10 @@
 import axios from 'axios'
-import { ENV_ERROR_MESSAGE, __VERBOSE__ } from './constants'
+import { ENV_ERROR_MESSAGE } from './constants'
+import { logVerbose } from './logging'
 
 export const createError = (error: Error | any, origin: string) => {
-  if (__VERBOSE__) {
-    console.log(`Error while ${origin}`, error)
-  }
+  logVerbose(`[ServerlessQ] Error while ${origin}`, error)
+
   if (axios.isAxiosError(error)) {
     throw new Error(`${origin} | ${error.message}`)
   } else throw new Error(origin)

@@ -7,3 +7,4 @@ export {
 export { Cron, CronOptions } from './cron'
 export { withServerlessQ } from './with-serverlessq'
 export { verifySignature } from './utils'
+export { exitAfterCleanup as serverlessQExit } from 'async-cleanup'

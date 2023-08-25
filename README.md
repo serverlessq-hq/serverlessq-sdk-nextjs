@@ -51,11 +51,22 @@ You need to set the `SERVERLESSQ_API_TOKEN` to have access to the system.
 
 > 💡 you can also use our [Vercel Integration](https://vercel.com/integrations/serverlessq) to automate that task 🙂
 
-If you want to use this library locally please create `.env.local` file with the following value:
+If you want to use this library locally  please create `.env.local` file with the following value:
 
 ```bash
 SERVERLESSQ_API_TOKEN=
 ```
+
+For deployments outside of Vercel, also set above environment variable during build time. We will use it to create your resources when your project builds. 
+
+
+If you want to host your project outside of Vercel and use the package, please set the `SLSQ_BASE_URL` variable pointing to your production URL, where your NextJS will run. 
+
+```bash
+SLSQ_BASE_URL=<your-production-url> # Example: SLSQ_BASE_URL=https://my-cool-project.com
+``````
+
+We will use this to prefix your generated resources so that they will point to your production resources e.g. `https://my-cool-project.com/api/your-queue`
 
 New for you? Go check out the official next.js docs on [how to create env files in NextJS](https://nextjs.org/docs/basic-features/environment-variables)
 
@@ -77,7 +88,7 @@ What does this do? If you are running your NextJS application locally e.g. throu
 
 ![Alt text](./assets/sdk.png)
 
-In order to keep track of what resources were created, we take advantage of a `.serverlessq-config.json` file. It is important to commit this file to your repository as it maps your created queue/cron id to the correspoding API function.
+In order to keep track of what resources were created, we take advantage of a `.serverlessq-config.json` file for local development and `.serverlessq-config.production.json` for production builds. It is important to commit this file to your repository as it maps your created queue/cron id to the corresponding API function.
 
 ## Queue
 ### Create a Queue from an API Function
@@ -184,6 +195,28 @@ We have full TypeScript support of course ✨
 ## Local Development
 
 ServerlessQ runs on the cloud. That means if you work locally on a queue or cron a proxy is necessary to forward your request back to your local machine. In order to ease your life we create a local proxy (by using [localtunnel](https://localtunnel.me/)) for you once you start your development server with `next dev`. 
+
+We offer the possibility to cleanup all dev resources when closing the development server. This happens by checking on different exit signals and deleting the resources when one is received. To enable this feature, update your package.json like this: 
+
+```json
+{
+ // ...
+   "scripts": {
+        "dev": "NEXT_MANUAL_SIG_HANDLE=true next dev",  // <-- Add this
+        "build": "next build",
+        "start": "next start",
+        // ...
+    },
+ // ...
+}
+```
+
+[NEXT_MANUAL_SIG_HANDLE](https://nextjs.org/docs/pages/building-your-application/deploying#manual-graceful-shutdowns) let's us override the exit behavior of next development server so that we can execute the cleanup logic. 
+
+If you do not add this, the development resources will persist after shutdown. Remember though, they will also add to your quota if there are called external for queues. C
+Dev cron jobs will still be executed, but will result in errors, as they proxy to your dev machine does not exist anymore. 
+
+Furthermore, the resources can take up to 15 seconds to be fully created. You can only delete the resources after they are created. 
 
 If you need help with that please contact us! 💬
 

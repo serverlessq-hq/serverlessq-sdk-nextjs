@@ -3,10 +3,10 @@ import {
   parse,
   type TSESTree
 } from '@typescript-eslint/typescript-estree'
+import path from 'path'
 import { CronOptions } from '../cron'
 import { QueueOptions } from '../queue/handler-next'
-import { __VERBOSE__ } from './constants'
-import path from 'path'
+import { logVerbose } from './logging'
 
 export type ParseFileResponse =
   | { type: 'cron'; name: string; route: string; options: CronOptions }
@@ -24,8 +24,9 @@ export const parseFile = (params: {
         node.type === AST_NODE_TYPES.ExportDefaultDeclaration
     )?.declaration
 
-    // @ts-ignore-
-    const type = declaration?.callee?.name?.toLowerCase() ?? ('' as 'cron' | 'queue')
+    const type =
+      // @ts-ignore-
+      declaration?.callee?.name?.toLowerCase() ?? ('' as 'cron' | 'queue')
     const PREFIX = params.isProduction ? '' : 'DEV_'
 
     if (!['cron', 'queue'].includes(type)) return
@@ -47,8 +48,7 @@ export const parseFile = (params: {
       options
     }
   } catch (e) {
-    if (__VERBOSE__)
-      console.log('[ServerlessQ] Error while parsing file to get config', e)
+    logVerbose('[ServerlessQ] Error while parsing file to get config', e)
 
     return undefined
   }
