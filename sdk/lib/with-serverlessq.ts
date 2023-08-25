@@ -57,7 +57,7 @@ async function registerDetector(phase: Phase) {
 }
 
 async function registerProxy(isProd: boolean) {
-  const tunnel = await localtunnel({ port: 3000 })
+  const tunnel = await localtunnel({ port: Number(process.env.PORT) || 3000 })
   await setMetadata({ ['proxy']: tunnel?.url }, isProd)
 }
 
