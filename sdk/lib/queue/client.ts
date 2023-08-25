@@ -9,10 +9,10 @@ import {
   BASE_URL,
   IS_VERCEL,
   OPTIONS_ERROR_MESSAGE,
-  VERCEL_URL,
-  __VERBOSE__
+  VERCEL_URL
 } from '../utils/constants'
 import { setMetadata, useMetadata } from '../utils/flag-file'
+import { logVerbose } from '../utils/logging'
 import { QueueOptions } from './handler-next'
 
 type QueueResponse = {
@@ -49,16 +49,18 @@ export type EnqueueOptionsWithQueueId = {
 
 type EnqueueOptions = Omit<EnqueueOptionsWithQueueId, 'queueId'>
 
-export const upsertQueue = async (options: QueueOptions) => {
+export const upsertQueue = async (
+  options: QueueOptions,
+  isProduction: boolean
+) => {
   try {
     const queue = (await http.post<Queue>(`/queues/${options.name}`, options))
       .data
 
-    await setMetadata({ [options.name]: queue.id })
+    await setMetadata({ [options.name]: queue.id }, isProduction)
 
-    if (__VERBOSE__) {
-      console.log(`Queue created with id ${queue.id}`)
-    }
+    logVerbose(`[ServerlessQ] Created queue with id ${queue.id}`)
+
     return queue
   } catch (error) {
     return createError(error, 'could not create or update queue')
@@ -70,12 +72,14 @@ export const enqueue = async (
 ) => {
   validateOptionsOrThrow(params)
 
-  const PREFIX = process.env.NODE_ENV === 'production' ? '' : 'DEV_'
+  const isProd = process.env.NODE_ENV === 'production'
+
+  const PREFIX = isProd ? '' : 'DEV_'
 
   let queueId = params.queueIdToOverride
   let baseUrl = IS_VERCEL ? `https://${VERCEL_URL}` : BASE_URL
 
-  const metadata = await useMetadata()
+  const metadata = await useMetadata(isProd)
   const proxy = metadata['proxy']
 
   if (proxy) {
@@ -116,10 +120,8 @@ export const deleteQueue = async (nameOfQueue: string) => {
       method: 'DELETE',
       url: `/queues/${nameOfQueue}`
     })
+    logVerbose(`[ServerlessQ] Queue ${nameOfQueue} deleted`)
 
-    if (__VERBOSE__) {
-      console.log(`Queue ${nameOfQueue} deleted`)
-    }
     return resp.data
   } catch (error) {
     if (checkIfResourcesConflictError(error)) {

@@ -8,10 +8,10 @@ import {
   IS_VERCEL,
   OPTIONS_ERROR_MESSAGE,
   SLASH_ERROR_MESSAGE,
-  VERCEL_URL,
-  __VERBOSE__
+  VERCEL_URL
 } from '../utils/constants'
 import { useMetadata } from '../utils/flag-file'
+import { logVerbose } from '../utils/logging'
 import { checkStringForSlashes } from '../utils/sanitize-input'
 import { CronOptions } from './handler-next'
 
@@ -26,7 +26,10 @@ export type Cron = {
   expression: string
 }
 
-export const upsertCron = async (options: CronOptions) => {
+export const upsertCron = async (
+  options: CronOptions,
+  isProduction: boolean
+) => {
   validateOptionsOrThrow(options)
   const { method, retries = 3, expression, name } = options
   let baseUrl = IS_VERCEL ? `https://${VERCEL_URL}` : BASE_URL
@@ -36,7 +39,7 @@ export const upsertCron = async (options: CronOptions) => {
   }
   let target = options.target
 
-  const metadata = await useMetadata()
+  const metadata = await useMetadata(isProduction)
   const proxy = metadata['proxy']
 
   if (proxy) {
@@ -55,12 +58,9 @@ export const upsertCron = async (options: CronOptions) => {
     new URL(options.target)
     isValidUrl = false
   } catch {
-    if (__VERBOSE__) {
-      console.log(
-        'Found relative path for cron target; adding base url',
-        options.target
-      )
-    }
+    logVerbose(
+      '[ServerlessQ] Found relative path for cron target; adding base url'
+    )
   }
 
   if (!isValidUrl) {
@@ -72,9 +72,12 @@ export const upsertCron = async (options: CronOptions) => {
   const cronTarget = options.target.replace(/^\//g, '')
   target = `${baseUrl}/${cronTarget}`
 
-  if (__VERBOSE__) {
-    console.log('Setting cron target to ', target, 'from', options.target)
-  }
+  logVerbose(
+    '[ServerlessQ] setting cron target to',
+    target,
+    'from',
+    options.target
+  )
 
   try {
     const resp = await http.post<Cron>(`/crons/${name}`, {
@@ -83,10 +86,8 @@ export const upsertCron = async (options: CronOptions) => {
       retries,
       cronExpression: expression
     })
+    logVerbose('[ServerlessQ] Cron created with id', resp.data.id)
 
-    if (__VERBOSE__) {
-      console.log(`Cron created with id ${resp.data.id}`)
-    }
     return resp.data
   } catch (error) {
     return createError(error, 'could not create or update cron')
@@ -96,10 +97,8 @@ export const upsertCron = async (options: CronOptions) => {
 export const deleteCron = async (nameOfCron: string) => {
   try {
     const resp = await http.delete<void>(`/crons/${nameOfCron}`)
+    logVerbose(`[ServerlessQ] Cron ${nameOfCron} deleted`)
 
-    if (__VERBOSE__) {
-      console.log(`Cron ${nameOfCron} deleted`)
-    }
     return resp.data
   } catch (error) {
     if (checkIfResourcesConflictError(error)) {

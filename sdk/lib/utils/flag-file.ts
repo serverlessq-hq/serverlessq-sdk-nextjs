@@ -1,10 +1,14 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { KV } from '../types';
-import { PROCESS_END_EVENTS, __VERBOSE__ } from './constants';
+import * as fs from 'fs'
+import * as path from 'path'
+import { KV } from '../types'
+import { PROCESS_END_EVENTS } from './constants'
+import { logVerbose } from './logging'
 
-export const FLAG_FILE = path.join(process.cwd(), '.serverlessq-config.json')
-
+export const getFlagFile = (isProduction: Boolean) =>
+  path.join(
+    process.cwd(),
+    `.serverlessq-config${isProduction ? '.production' : ''}.json`
+  )
 
 const createUnlinkListener = () => {
   for (const event of PROCESS_END_EVENTS) {
@@ -12,12 +16,14 @@ const createUnlinkListener = () => {
   }
 }
 
-const removeFlagFile = () => {
-  if (fs.existsSync(FLAG_FILE))
-    fs.unlink(FLAG_FILE, err => {
+const removeFlagFile = (isProduction: Boolean) => {
+  if (fs.existsSync(getFlagFile(isProduction)))
+    fs.unlink(getFlagFile(isProduction), err => {
       if (err) {
         console.error(
-          `[ServerlessQ] Error deleting flag file. Please check for a ${FLAG_FILE} in your root and delete it manually.`
+          `[ServerlessQ] Error deleting flag file. Please check for a ${getFlagFile(
+            isProduction
+          )} in your root and delete it manually.`
         )
       }
     })
@@ -30,23 +36,19 @@ export const ensureSingleExecution = async (params: {
   onExecution: Function
   isProduction: boolean
 }) => {
+  const FLAG_FILE = getFlagFile(params.isProduction)
   // ensure dev process does not start with a flag file
+  logVerbose(`[ServerlessQ] Detected no production execution. Using config file ${FLAG_FILE}`)
+
   if (!fs.existsSync(FLAG_FILE)) {
     fs.writeFileSync(FLAG_FILE, '')
-    if (__VERBOSE__) {
-      console.log(`Creating config file ${FLAG_FILE}`)
-    }
-    await params.onExecution()
-    // deployed version needs a lookup for the flag file
-    if (!params.isProduction) {
-      createUnlinkListener()
-    }
+
+    logVerbose(`[ServerlessQ] Creating config file ${FLAG_FILE}`)
   } else {
-    if (__VERBOSE__) {
-      console.log(
-        `ServerlessQ config file found. Skipping execution. If you want to create a production build delete the ${FLAG_FILE} file and try again.`
-      )
-    }
+    logVerbose(`[ServerlessQ] Config file ${FLAG_FILE} already exists, purging it`)
+
+    // purge the file
+    fs.truncateSync(FLAG_FILE)
   }
 
   process.on('SIGINT', () => {
@@ -54,10 +56,17 @@ export const ensureSingleExecution = async (params: {
       fs.unlinkSync(FLAG_FILE)
     }
   })
+
+  await params.onExecution()
+  // deployed version needs a lookup for the flag file
+  if (!params.isProduction) {
+    createUnlinkListener()
+  }
 }
 
 // This is a hacky way to store metadata and very slow. It is necessary as the are different node processes running
-export const setMetadata = async (params: KV) => {
+export const setMetadata = async (params: KV, isProduction: boolean) => {
+  const FLAG_FILE = getFlagFile(isProduction)
   const file = await fs.promises.readFile(FLAG_FILE, 'utf-8')
 
   const crtMetadata = file ? JSON.parse(file || '{}') : {}
@@ -66,15 +75,13 @@ export const setMetadata = async (params: KV) => {
   await fs.promises.writeFile(FLAG_FILE, stringified)
 }
 
-export const useMetadata = async () => {
+export const useMetadata = async (isProduction: boolean) => {
   try {
-    const file = await fs.promises.readFile(FLAG_FILE, 'utf-8')
+    const file = await fs.promises.readFile(getFlagFile(isProduction), 'utf-8')
     const metadata = file ? file : '{}'
     return JSON.parse(metadata) as Partial<KV>
   } catch (_) {
-    if (__VERBOSE__) {
-      console.log('No metadata found')
-    }
+    logVerbose('[ServerlessQ] No metadata found')
     return {}
   }
 }

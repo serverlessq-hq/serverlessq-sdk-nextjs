@@ -10,12 +10,13 @@ import {
 import { WebpackConfigContext } from 'next/dist/server/config-shared'
 import { SlsqDetector } from './slsq-detector'
 import { isProduction } from './utils'
-import { __VERBOSE__ } from './utils/constants'
+import { checkForEnvVariables } from './utils/constants'
 import {
-  FLAG_FILE,
   ensureSingleExecution,
+  getFlagFile,
   setMetadata
 } from './utils/flag-file'
+import { logVerbose } from './utils/logging'
 
 const watchModePhases = [
   PHASE_DEVELOPMENT_SERVER,
@@ -38,40 +39,56 @@ async function registerDetector(phase: Phase) {
     return
   }
   addCleanupListener(async () => {
-    if (__VERBOSE__) {
-      console.log('Deleting all ServerlessQ DEV resources')
+    logVerbose(`[ServerlessQ] Cleaning up ServerlessQ resources`)
+
+    try {
+      await detector.deleteOnEndEvent()
+      logVerbose(`[ServerlessQ] ServerlessQ resources cleaned up`)
+    } catch {
+      logVerbose(
+        `[ServerlessQ] Could not clean up dev resources, please delete them manually`
+      )
     }
-    await detector.deleteOnEndEvent()
+
+    process.exit(0)
   })
 
   return
 }
 
-async function registerProxy() {
+async function registerProxy(isProd: boolean) {
   const tunnel = await localtunnel({ port: 3000 })
-  if (__VERBOSE__) {
-    console.log(`Started local proxy at: ${tunnel.url}`)
-  }
-  await setMetadata({ ['proxy']: tunnel?.url })
+  await setMetadata({ ['proxy']: tunnel?.url }, isProd)
 }
 
 export const withServerlessQ =
   (nextConfig: NextConfig) => async (phase: Phase) => {
+    const isProd = isProduction(phase)
+
+    console.info(
+      `[ServerlessQ] starting in ${isProd ? 'production' : 'development'} mode`
+    )
+
+    const FLAG_FILE = getFlagFile(isProd)
+
     await ensureSingleExecution({
       onExecution: async () => {
-        if (__VERBOSE__) {
-          console.log('Starting ServerlessQ plugin with verbose logs')
-        }
+        logVerbose(
+          '[ServerlessQ] Starting ServerlessQ plugin with verbose logs'
+        )
+
+        checkForEnvVariables(isProd)
 
         if (phase === PHASE_DEVELOPMENT_SERVER) {
-          await registerProxy()
+          await registerProxy(isProd)
+          console.info('[ServerlessQ] Started local proxy')
         }
 
         if (watchModePhases.includes(phase)) {
           await registerDetector(phase)
         }
       },
-      isProduction: isProduction(phase)
+      isProduction: isProd
     })
 
     return Object.assign({}, nextConfig, {
@@ -91,9 +108,8 @@ export const withServerlessQ =
 
         config.module.rules.push({
           test: /\.node$/,
-          loader: "node-loader",
-        });
-
+          loader: 'node-loader'
+        })
 
         if (typeof nextConfig.webpack === 'function') {
           return nextConfig.webpack(config, options)
