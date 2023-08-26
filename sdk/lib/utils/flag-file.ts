@@ -1,14 +1,20 @@
 import * as fs from 'fs'
-import * as path from 'path'
+import path from 'path'
 import { KV } from '../types'
 import { PROCESS_END_EVENTS } from './constants'
 import { logVerbose } from './logging'
 
+const NEXT_PATH = path.join(process.cwd(), '.next', 'static')
+const FILE_NAME = (isProduction: Boolean) =>
+  `.serverlessq-config${isProduction ? '.production' : ''}.json`
+
+const getAccessibleFile = (isProduction: Boolean) =>
+  isProduction
+    ? path.join(NEXT_PATH, FILE_NAME(isProduction))
+    : getFlagFile(isProduction)
+
 export const getFlagFile = (isProduction: Boolean) =>
-  path.join(
-    process.cwd(),
-    `.serverlessq-config${isProduction ? '.production' : ''}.json`
-  )
+  path.join(process.cwd(), FILE_NAME(isProduction))
 
 const createUnlinkListener = () => {
   for (const event of PROCESS_END_EVENTS) {
@@ -38,17 +44,21 @@ export const ensureSingleExecution = async (params: {
 }) => {
   const FLAG_FILE = getFlagFile(params.isProduction)
   // ensure dev process does not start with a flag file
-  logVerbose(`[ServerlessQ] Detected no production execution. Using config file ${FLAG_FILE}`)
+  logVerbose(
+    `[ServerlessQ] Detected no production execution. Using config file ${FLAG_FILE}`
+  )
 
   if (!fs.existsSync(FLAG_FILE)) {
     fs.writeFileSync(FLAG_FILE, '')
 
     logVerbose(`[ServerlessQ] Creating config file ${FLAG_FILE}`)
   } else {
-    logVerbose(`[ServerlessQ] Config file ${FLAG_FILE} already exists, purging it`)
+    logVerbose(
+      `[ServerlessQ] Config file ${FLAG_FILE} already exists, purging it`
+    )
 
     // purge the file
-    fs.truncateSync(FLAG_FILE)
+    fs.truncateSync(FLAG_FILE, 0)
   }
 
   process.on('SIGINT', () => {
@@ -66,7 +76,7 @@ export const ensureSingleExecution = async (params: {
 
 // This is a hacky way to store metadata and very slow. It is necessary as the are different node processes running
 export const setMetadata = async (params: KV, isProduction: boolean) => {
-  const FLAG_FILE = getFlagFile(isProduction)
+  const FLAG_FILE = getAccessibleFile(isProduction)
   const file = await fs.promises.readFile(FLAG_FILE, 'utf-8')
 
   const crtMetadata = file ? JSON.parse(file || '{}') : {}
@@ -77,7 +87,14 @@ export const setMetadata = async (params: KV, isProduction: boolean) => {
 
 export const useMetadata = async (isProduction: boolean) => {
   try {
-    const file = await fs.promises.readFile(getFlagFile(isProduction), 'utf-8')
+    logVerbose('[ServerlessQ] Reading config file')
+    logVerbose(
+      '[ServerlessQ] Found config file',
+      getAccessibleFile(isProduction)
+    )
+
+    const file = await fs.readFileSync(getAccessibleFile(isProduction), 'utf-8')
+
     const metadata = file ? file : '{}'
     return JSON.parse(metadata) as Partial<KV>
   } catch (_) {
