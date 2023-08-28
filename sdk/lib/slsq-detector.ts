@@ -102,11 +102,11 @@ export class SlsqDetector {
       if (params.type === 'cron') {
         await upsertCron(
           {
-            name: params.name,
+            name: params.options.name,
             expression: params.options.expression,
             method: params.options.method,
             retries: params.options.retries,
-            target: params.route
+            target: params.options.target
           },
           this.isProduction
         )
@@ -114,8 +114,8 @@ export class SlsqDetector {
       if (params.type === 'queue') {
         await upsertQueue(
           {
-            name: params.name,
-            route: params.route,
+            name: params.options.name,
+            route: params.options.route,
             retries: params.options.retries
           },
           this.isProduction
