@@ -104,7 +104,7 @@ export const withServerlessQ =
               patterns: [
                 {
                   from: FLAG_FILE,
-                  to: 'static'
+                  to: './'
                 }
               ]
             })

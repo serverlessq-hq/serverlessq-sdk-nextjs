@@ -4,17 +4,16 @@ import { KV } from '../types'
 import { PROCESS_END_EVENTS } from './constants'
 import { logVerbose } from './logging'
 
-const NEXT_PATH = path.join(process.cwd(), '.next', 'static')
-const FILE_NAME = (isProduction: Boolean) =>
-  `.serverlessq-config${isProduction ? '.production' : ''}.json`
+// const NEXT_PATH = path.join(process.cwd(), '.next', 'static')
 
-const getAccessibleFile = (isProduction: Boolean) =>
-  isProduction
-    ? path.join(NEXT_PATH, FILE_NAME(isProduction))
-    : getFlagFile(isProduction)
+const FILE_NAME_PROD = path.join(
+  process.cwd(),
+  '.serverlessq-config.production.json'
+)
+const FILE_NAME_DEV = path.join(process.cwd(), '.serverlessq-config.json')
 
 export const getFlagFile = (isProduction: Boolean) =>
-  path.join(process.cwd(), FILE_NAME(isProduction))
+  isProduction ? FILE_NAME_PROD : FILE_NAME_DEV
 
 const createUnlinkListener = () => {
   for (const event of PROCESS_END_EVENTS) {
@@ -76,7 +75,7 @@ export const ensureSingleExecution = async (params: {
 
 // This is a hacky way to store metadata and very slow. It is necessary as the are different node processes running
 export const setMetadata = async (params: KV, isProduction: boolean) => {
-  const FLAG_FILE = getAccessibleFile(isProduction)
+  const FLAG_FILE = getFlagFile(isProduction)
   const file = await fs.promises.readFile(FLAG_FILE, 'utf-8')
 
   const crtMetadata = file ? JSON.parse(file || '{}') : {}
@@ -88,12 +87,9 @@ export const setMetadata = async (params: KV, isProduction: boolean) => {
 export const useMetadata = async (isProduction: boolean) => {
   try {
     logVerbose('[ServerlessQ] Reading config file')
-    logVerbose(
-      '[ServerlessQ] Found config file',
-      getAccessibleFile(isProduction)
-    )
+    logVerbose('[ServerlessQ] Found config file', getFlagFile(isProduction))
 
-    const file = await fs.readFileSync(getAccessibleFile(isProduction), 'utf-8')
+    const file = await fs.readFileSync(getFlagFile(isProduction), 'utf-8')
 
     const metadata = file ? file : '{}'
     return JSON.parse(metadata) as Partial<KV>
