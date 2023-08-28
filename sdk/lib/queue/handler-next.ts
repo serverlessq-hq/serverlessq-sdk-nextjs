@@ -1,6 +1,6 @@
 import { HttpMethod } from '../types'
 import { extractMetaFromFilename } from '../utils/parser'
-import { enqueue } from './client'
+import { enqueueByQueue } from './client'
 import { NextApiRequest, NextApiResponse, NextApiHandler } from 'next'
 
 export interface QueueOptions {
@@ -38,7 +38,7 @@ export function Queue(params: {
   nextApiHandler.enqueue = async (enqueueOptions: EnqueueOptions) => {
     const { method, body } = enqueueOptions
 
-    return await enqueue({
+    return await enqueueByQueue({
       name: meta.name,
       route: meta.route,
       method,
