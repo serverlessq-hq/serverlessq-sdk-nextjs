@@ -21,6 +21,8 @@ The SDK is specifically for Next.JS projects. If the projects are deployed to Ve
 
 ServerlessQ is the **missing piece** on Vercel to add asynchronous tasks!
 
+> 🚧 You need to use Next.JS minimum 12.2. You can use the `enqueue` function with versions < 12.2, but you can't create new queues.
+
 ---
 
 You can find the full docs for the SDK Version 2 [here](https://docs.serverlessq.com/sdks/next_2_0).
@@ -271,6 +273,10 @@ If you encounter errors while using the SDK you can enable verbose logs by setti
 ## Example Project
 
 We have an example project in our [GitHub repository](https://github.com/serverlessq-hq/serverlessq-sdk-nextjs/tree/main/examples/playground)
+
+## Port
+
+If you're project runs another port than 3000 please start your dev server with the environment variable `PORT`. E.g. `PORT=4040 yarn dev`.
 
 ## License
 
