@@ -106,7 +106,7 @@ export class SlsqDetector {
             expression: params.options.expression,
             method: params.options.method,
             retries: params.options.retries,
-            target: params.options.target
+            target: params.target
           },
           this.isProduction
         )

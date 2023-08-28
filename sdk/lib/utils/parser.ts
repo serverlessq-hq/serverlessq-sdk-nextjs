@@ -8,7 +8,7 @@ import { QueueOptions } from '../queue/handler-next'
 import { logVerbose } from './logging'
 
 export type ParseFileResponse =
-  | { type: 'cron'; name: string; options: CronOptions }
+  | { type: 'cron'; name: string; target: string; options: CronOptions }
   | { type: 'queue'; name: string; options: QueueOptions }
 
 export const parseFile = (params: {
@@ -43,6 +43,7 @@ export const parseFile = (params: {
     return {
       type,
       name: `${PREFIX}${options.name}`,
+      target: extractMetaFromFilename(params.fileName).route,
       options
     }
   } catch (e) {
