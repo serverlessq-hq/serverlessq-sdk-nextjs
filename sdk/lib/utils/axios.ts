@@ -1,13 +1,17 @@
 import axios from 'axios'
+import ServerlessQError from '../errors/ServerlessQError'
 import { ENV_ERROR_MESSAGE } from './constants'
 import { logVerbose } from './logging'
 
 export const createError = (error: Error | any, origin: string) => {
-  logVerbose(`[ServerlessQ] Error while ${origin}`, error)
+  logVerbose(`[ServerlessQ] Error: ${origin}`, error)
 
   if (axios.isAxiosError(error)) {
-    throw new Error(`${origin} | ${error.message}`)
-  } else throw new Error(origin)
+    throw new ServerlessQError(
+      `${origin} | ${error.message}`,
+      error.response?.status
+    )
+  } else throw new ServerlessQError(origin)
 }
 
 export const checkIfResourcesConflictError = (error: Error | any) => {

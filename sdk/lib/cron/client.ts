@@ -86,7 +86,7 @@ export const upsertCron = async (
       retries,
       cronExpression: expression
     })
-    logVerbose('[ServerlessQ] Cron created with id', resp.data.id)
+    console.info('[ServerlessQ] Cron created with id', resp.data.id)
 
     return resp.data
   } catch (error) {
