@@ -1,3 +1,4 @@
+import { isValidUrl } from '../utils'
 import {
   checkIfResourcesConflictError,
   createError,
@@ -52,18 +53,7 @@ export const upsertCron = async (
     )
   }
 
-  let isValidUrl = true
-
-  try {
-    new URL(options.target)
-    isValidUrl = false
-  } catch {
-    logVerbose(
-      '[ServerlessQ] Found relative path for cron target; adding base url'
-    )
-  }
-
-  if (!isValidUrl) {
+  if (isValidUrl(options.target)) {
     throw new Error(
       'Please use only relative paths for cron targets; We will add the proxy for you. Please refer to the docs for more information.'
     )
