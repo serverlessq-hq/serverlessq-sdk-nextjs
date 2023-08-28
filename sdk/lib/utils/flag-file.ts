@@ -1,14 +1,19 @@
 import * as fs from 'fs'
-import * as path from 'path'
+import path from 'path'
 import { KV } from '../types'
 import { PROCESS_END_EVENTS } from './constants'
 import { logVerbose } from './logging'
 
+// const NEXT_PATH = path.join(process.cwd(), '.next', 'static')
+
+const FILE_NAME_PROD = path.join(
+  process.cwd(),
+  '.serverlessq-config.production.json'
+)
+const FILE_NAME_DEV = path.join(process.cwd(), '.serverlessq-config.json')
+
 export const getFlagFile = (isProduction: Boolean) =>
-  path.join(
-    process.cwd(),
-    `.serverlessq-config${isProduction ? '.production' : ''}.json`
-  )
+  isProduction ? FILE_NAME_PROD : FILE_NAME_DEV
 
 const createUnlinkListener = () => {
   for (const event of PROCESS_END_EVENTS) {
@@ -38,17 +43,21 @@ export const ensureSingleExecution = async (params: {
 }) => {
   const FLAG_FILE = getFlagFile(params.isProduction)
   // ensure dev process does not start with a flag file
-  logVerbose(`[ServerlessQ] Detected no production execution. Using config file ${FLAG_FILE}`)
+  logVerbose(
+    `[ServerlessQ] Detected no production execution. Using config file ${FLAG_FILE}`
+  )
 
   if (!fs.existsSync(FLAG_FILE)) {
     fs.writeFileSync(FLAG_FILE, '')
 
     logVerbose(`[ServerlessQ] Creating config file ${FLAG_FILE}`)
   } else {
-    logVerbose(`[ServerlessQ] Config file ${FLAG_FILE} already exists, purging it`)
+    logVerbose(
+      `[ServerlessQ] Config file ${FLAG_FILE} already exists, purging it`
+    )
 
     // purge the file
-    fs.truncateSync(FLAG_FILE)
+    fs.truncateSync(FLAG_FILE, 0)
   }
 
   process.on('SIGINT', () => {
@@ -77,7 +86,11 @@ export const setMetadata = async (params: KV, isProduction: boolean) => {
 
 export const useMetadata = async (isProduction: boolean) => {
   try {
-    const file = await fs.promises.readFile(getFlagFile(isProduction), 'utf-8')
+    logVerbose('[ServerlessQ] Reading config file')
+    logVerbose('[ServerlessQ] Found config file', getFlagFile(isProduction))
+
+    const file = await fs.readFileSync(getFlagFile(isProduction), 'utf-8')
+
     const metadata = file ? file : '{}'
     return JSON.parse(metadata) as Partial<KV>
   } catch (_) {

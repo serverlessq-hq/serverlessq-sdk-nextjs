@@ -6,6 +6,7 @@ import { deleteCron, upsertCron } from './cron/client'
 import { deleteQueue, upsertQueue } from './queue/client'
 import { logVerbose } from './utils/logging'
 import { ParseFileResponse, parseFile } from './utils/parser'
+import ServerlessQError from './errors/ServerlessQError'
 
 export class SlsqDetector {
   private static instance: SlsqDetector
@@ -55,7 +56,7 @@ export class SlsqDetector {
     this.hashTable.forEach((_, filePath) => {
       if (filePath) {
         promises.push(
-          new Promise((resolve, reject) => {
+          new Promise(resolve => {
             return fs
               .readFile(path.join(this.cwd, filePath), 'utf-8')
               .then(async content => {
@@ -120,8 +121,32 @@ export class SlsqDetector {
           this.isProduction
         )
       }
-    } catch (error) {
-      logVerbose(`[ServerlessQ] Error while creating a ${params.type}`)
+    } catch (e) {
+      if (this.isProduction) {
+        const error = e as ServerlessQError
+
+        console.error(
+          "[ServerlessQ] Couldn't update",
+          params.type,
+          'with name',
+          params.name
+        )
+
+        if (error.code === 403) {
+          console.error(
+            '[ServerlessQ] There seems to be a problem with your SERVERLESSQ_API_TOKEN, please check that you have provided the correct token'
+          )
+        }
+
+        process.exit(1)
+      } else {
+        console.info(
+          "[ServerlessQ] Couldn't update",
+          params.type,
+          'with name',
+          params.name
+        )
+      }
     }
   }
 

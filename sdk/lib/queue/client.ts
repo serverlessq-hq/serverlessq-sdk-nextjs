@@ -63,7 +63,7 @@ export const upsertQueue = async (
 
     await setMetadata({ [options.name]: queue.id }, isProduction)
 
-    logVerbose(`[ServerlessQ] Created queue with id ${queue.id}`)
+    console.info(`[ServerlessQ] Created queue with id`, queue.id, "and name", options.name)
 
     return queue
   } catch (error) {
@@ -72,7 +72,7 @@ export const upsertQueue = async (
 }
 
 /**
- * 
+ *
  * @param params.queueIdToOverride - the id of the queue to override @optional
  * @param params.route - the route of the message queue i.e. /api/newsletter
  * @param params.method - http method executed against the target

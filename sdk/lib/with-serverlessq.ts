@@ -57,7 +57,13 @@ async function registerDetector(phase: Phase) {
 }
 
 async function registerProxy(isProd: boolean) {
-  const tunnel = await localtunnel({ port: Number(process.env.PORT) || 3000 })
+  const port = process.env.PORT
+
+  if(!port) {
+    console.info('[ServerlessQ] the PORT environment variable is not set. SLSQ assumes that you are running on 3000. To set the port, please start your local dev server with PORT=<your-port> next dev')
+  }
+
+    const tunnel = await localtunnel({ port: Number(port) || 3000 })
   await setMetadata({ ['proxy']: tunnel?.url }, isProd)
 }
 
@@ -104,7 +110,7 @@ export const withServerlessQ =
               patterns: [
                 {
                   from: FLAG_FILE,
-                  to: 'static'
+                  to: './'
                 }
               ]
             })
