@@ -278,6 +278,13 @@ We have an example project in our [GitHub repository](https://github.com/serverl
 
 If you're project runs another port than 3000 please start your dev server with the environment variable `PORT`. E.g. `PORT=4040 yarn dev`.
 
+## Known Bugs
+
+There are a few known bugs with Next.JS versions. Please try to use other versions.
+
+- 13.1.6: Resources will be created multiple times.
+- > 13.4.13: No shutdown command is executed - you can use this version, but your resources will not be cleaned up.
+
 ## License
 
 The MIT License.
