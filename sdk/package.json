@@ -1,6 +1,6 @@
 {
   "name": "@serverlessq/nextjs",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "The SDK to utilize managed queues and crons by ServerlessQ",
   "homepage": "https://serverlessq.com",
   "license": "MIT",
