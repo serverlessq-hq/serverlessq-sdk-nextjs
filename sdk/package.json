@@ -1,6 +1,6 @@
 {
   "name": "@serverlessq/nextjs",
-  "version": "2.0.3-rc1",
+  "version": "2.0.3",
   "description": "The SDK to utilize managed queues and crons by ServerlessQ",
   "homepage": "https://serverlessq.com",
   "license": "MIT",
@@ -73,9 +73,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/serverlessq-hq/serverlessq-nextjs.git"
+    "url": "git+https://github.com/serverlessq-hq/serverlessq-sdk-nextjs.git"
   },
   "bugs": {
-    "url": "https://github.com/serverlessq-hq/serverlessq-nextjs/issues"
+    "url": "https://github.com/serverlessq-hq/serverlessq-sdk-nextjs/issues"
   }
 }
