@@ -2,6 +2,7 @@ import { Queue } from "@serverlessq/nextjs";
 
 export default Queue({
   options: {
+    name: 'queue',
     route: '/api/queue',
     retries: 3,
   },

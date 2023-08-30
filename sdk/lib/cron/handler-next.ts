@@ -11,7 +11,7 @@ export interface CronOptions {
 /**
  * Creates a new cron jobs and returns the next api handler
  * @param params.handler - the function to be called when the cron is triggered
- * @param params.options.target - the target of the cron. Optional and defaults to the route of the cron
+ * @param params.options.name - the name of the cron. Needs to be unique @example NewsletterCron
  * @param params.options.method - the http method to be executed against the target
  * @param params.options.expression - the cron expression
  * @param params.options.retries - the number of retries to be attempted @default 1
@@ -19,7 +19,7 @@ export interface CronOptions {
  */
 export function Cron(params: {
   handler: NextApiHandler
-  options: Omit<CronOptions, 'name' | 'target'>
+  options: Omit<CronOptions, 'target'>
 }) {
   const { handler } = params
 

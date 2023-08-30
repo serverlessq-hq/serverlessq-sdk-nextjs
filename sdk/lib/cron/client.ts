@@ -32,7 +32,7 @@ export const upsertCron = async (
   isProduction: boolean
 ) => {
   validateOptionsOrThrow(options)
-  const { method, retries = 3, expression, name } = options
+  const { method, retries = 1, expression, name } = options
   let baseUrl = IS_VERCEL ? `https://${VERCEL_URL}` : BASE_URL
 
   if (checkStringForSlashes(name)) {
@@ -49,7 +49,7 @@ export const upsertCron = async (
 
   if (!baseUrl) {
     throw new Error(
-      `No baseUrl found for cron. If you create a local production build please set a SLSQ_BASE_URL in your .env.local file. If you deploy to Vercel this is set automatically within your pipeline.`
+      `No baseUrl found for cron. If you don't use Vercel please set SLSQ_BASE_URL in your environment variables.`
     )
   }
 
@@ -107,7 +107,12 @@ export const deleteCron = async (nameOfCron: string) => {
 }
 
 const validateOptionsOrThrow = (options: CronOptions) => {
-  if (!options.target || !options.method || !options.expression) {
+  if (
+    !options.name ||
+    !options.target ||
+    !options.method ||
+    !options.expression
+  ) {
     throw new Error(OPTIONS_ERROR_MESSAGE)
   }
 }

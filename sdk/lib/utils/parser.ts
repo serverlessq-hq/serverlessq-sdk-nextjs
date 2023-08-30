@@ -3,14 +3,13 @@ import {
   parse,
   type TSESTree
 } from '@typescript-eslint/typescript-estree'
-import path from 'path'
 import { CronOptions } from '../cron'
 import { QueueOptions } from '../queue/handler-next'
 import { logVerbose } from './logging'
 
 export type ParseFileResponse =
-  | { type: 'cron'; name: string; route: string; options: CronOptions }
-  | { type: 'queue'; name: string; route: string; options: QueueOptions }
+  | { type: 'cron'; name: string; target: string; options: CronOptions }
+  | { type: 'queue'; name: string; options: QueueOptions }
 
 export const parseFile = (params: {
   fileContent: string
@@ -43,8 +42,8 @@ export const parseFile = (params: {
 
     return {
       type,
-      name: `${PREFIX}${path.parse(params.fileName).name}`,
-      route: extractMetaFromFilename(params.fileName).route,
+      name: `${PREFIX}${options.name}`,
+      target: extractMetaFromFilename(params.fileName).route,
       options
     }
   } catch (e) {

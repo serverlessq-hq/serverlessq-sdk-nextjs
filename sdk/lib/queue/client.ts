@@ -184,7 +184,7 @@ export const deleteQueue = async (nameOfQueue: string) => {
 }
 
 const validateOptionsOrThrow = (options: EnqueueOptions) => {
-  if (!options.route || !options.method) {
+  if (!options.name || !options.route || !options.method) {
     throw new Error(OPTIONS_ERROR_MESSAGE)
   }
 }

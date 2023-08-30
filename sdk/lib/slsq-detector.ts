@@ -106,7 +106,7 @@ export class SlsqDetector {
             expression: params.options.expression,
             method: params.options.method,
             retries: params.options.retries,
-            target: params.route
+            target: params.target
           },
           this.isProduction
         )
@@ -115,7 +115,7 @@ export class SlsqDetector {
         await upsertQueue(
           {
             name: params.name,
-            route: params.route,
+            route: params.options.route,
             retries: params.options.retries
           },
           this.isProduction

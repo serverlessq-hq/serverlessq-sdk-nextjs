@@ -1,7 +1,6 @@
+import { NextApiHandler, NextApiRequest, NextApiResponse } from 'next'
 import { HttpMethod } from '../types'
-import { extractMetaFromFilename } from '../utils/parser'
 import { enqueueByQueue } from './client'
-import { NextApiRequest, NextApiResponse, NextApiHandler } from 'next'
 
 export interface QueueOptions {
   name: string
@@ -16,17 +15,16 @@ export interface EnqueueOptions {
 /**
  * Creates a new queue and returns the next api handler
  * @param params.handler - the function to be called when the queue is triggered
- * @param params.options.route - the route of the key in the format /api/queue
+ * @param params.options.name - the name of the queue. Needs to be unique @example NewsletterQueue
+ * @param params.options.route - the route of the key in the format /api/queue @example /api/newsletter
  * @param params.options.retries - the number of retries to be attempted @default 1
  * @returns the next api handler wrapped in the queue an enhanced with an enqueue function
  */
 export function Queue(params: {
   handler: NextApiHandler
-  options: Omit<QueueOptions, 'name'>
+  options: QueueOptions
 }) {
   const { handler, options } = params
-
-  const meta = extractMetaFromFilename(options.route)
 
   async function nextApiHandler(
     req: NextApiRequest,
@@ -39,8 +37,8 @@ export function Queue(params: {
     const { method, body } = enqueueOptions
 
     return await enqueueByQueue({
-      name: meta.name,
-      route: meta.route,
+      name: options.name,
+      route: options.route,
       method,
       body
     })
